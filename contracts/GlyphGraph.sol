@@ -11,6 +11,7 @@ import "hardhat/console.sol";
 contract GlyphGraph is ERC721URIStorage {
     struct User {
         string _id;
+        address _address;
         string email;
         string name;
         string password;
@@ -32,8 +33,14 @@ contract GlyphGraph is ERC721URIStorage {
         bool protected;
         string password;
     }
-    mapping(string => Vault)  Vaults;
-    event VaultCreated(Vault vault);
+    mapping(string => Vault) Vaults;
+    event VaultCreated(
+        string _id,
+        address user,
+        string nam,
+        bool protecte,
+        string password
+    );
 
     struct Password {
         string image;
@@ -84,61 +91,48 @@ contract GlyphGraph is ERC721URIStorage {
         string memory _email,
         string memory _password
     ) external {
-        require(
-            bytes(__users[msg.sender]._id).length == 0,
-            "User already exists"
-        );
-
         string memory _randomId = __generateRandomString(32);
-        // User memory _user = User({
-        //     _id: _randomId,
-        //     name: _name,
-        //     email: _email,
-        //     password: _password,
-        //     timestamp: block.timestamp
-        // });
-        Users[msg.sender] =  User({
-            _id: _randomId,
-            name: _name,
-            email: _email,
-            password: _password,
-            timestamp: block.timestamp
-        });
+        Users[msg.sender]._id = _randomId;
+        Users[msg.sender]._address = msg.sender;
+        Users[msg.sender].name = _name;
+        Users[msg.sender].email = _email;
+        Users[msg.sender].password = _password;
+        Users[msg.sender].timestamp = block.timestamp;
         emit UserCreated(_randomId, _email, _name, _password, block.timestamp);
+        // _mint(msg.sender, 1);
     }
 
-    function getUser() public view returns (User memory) {
-        console.log(msg.sender, "hello", __users[msg.sender].email);
-        return __users[msg.sender];
+    function getUser(address _address) external view returns (User memory) {
+        return Users[_address];
     }
 
-    function createVault(string memory _name) public {
-        User memory __user = __users[msg.sender];
+    function createVault(address _user, string memory _name) public {
+        User memory __user = Users[_user];
         require(bytes(__user._id).length > 0, "User not found");
         string memory _randomId = __generateRandomString(32);
         Vault memory _vault = Vault({
             _id: _randomId,
-            user: msg.sender,
+            user: _user,
             name: _name,
             protected: false,
             password: ""
         });
-        __vaults[_randomId] = _vault;
-        emit VaultCreated(_vault);
+        Vaults[_randomId] = _vault;
+        emit VaultCreated(_randomId, msg.sender, _name, false, "");
     }
 
-    function createVault(string memory _name, string memory _password) public {
-        User memory __user = __users[msg.sender];
+    function createVaultWithPassword(address _user, string memory _name, string memory _password) public {
+        User memory __user = Users[_user];
         require(bytes(__user._id).length > 0, "User not found");
         string memory _randomId = __generateRandomString(32);
         Vault memory _vault = Vault({
             _id: _randomId,
-            user: msg.sender,
+            user: _user,
             name: _name,
             protected: true,
             password: _password
         });
-        __vaults[_randomId] = _vault;
-        emit VaultCreated(_vault);
+        Vaults[_randomId] = _vault;
+        emit VaultCreated(_randomId, msg.sender, _name, true, _password);
     }
 }

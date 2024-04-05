@@ -36,17 +36,23 @@ describe("GlyphGraph", function () {
     })
 
     it("Get the user",  async () => {
-      const { gg } = await loadFixture(deployContract)
-      const user = await gg.getUser();
+      const { gg, owner } = await loadFixture(deployContract)
+      const user = await gg.getUser(owner.address);
       console.log(user)
       assert(user !== null)
     })
   })
 
   describe("Vault", () => {
-    it("The vault should be created", async () => {
-      const { gg } = await loadFixture(deployContract)
-      const { data } = await gg.createVault("v1")
+    it("The vault1 should be created", async () => {
+      const { gg, owner } = await loadFixture(deployContract)
+      const { data } = await gg.createVault(owner.address, "v1")
+      assert(data !== null)
+    })
+
+    it("The vault2 should be created", async () => {
+      const { gg, owner } = await loadFixture(deployContract)
+      const { data } = await gg.createVaultWithPassword(owner.address, "v1", "password1")
       assert(data !== null)
     })
   })
