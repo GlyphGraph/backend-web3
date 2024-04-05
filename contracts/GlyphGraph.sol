@@ -16,8 +16,9 @@ contract GlyphGraph is ERC721URIStorage {
         string name;
         string password;
         uint256 timestamp;
+        bool registered;
     }
-    mapping(address => User) Users;
+    mapping(address => User) private Users;
     event UserCreated(
         string _id,
         string email,
@@ -32,8 +33,9 @@ contract GlyphGraph is ERC721URIStorage {
         string name;
         bool protected;
         string password;
+        bool created;
     }
-    mapping(string => Vault) Vaults;
+    mapping(string => Vault) private Vaults;
     event VaultCreated(
         string _id,
         address user,
@@ -51,8 +53,9 @@ contract GlyphGraph is ERC721URIStorage {
         bool capitalLetters;
         bool includeNumbers;
         address user;
+        bool created;
     }
-    mapping(string => Password) Passwords;
+    mapping(string => Password) private Passwords;
     event PasswordCreated(Password password);
 
     struct Login {
@@ -62,9 +65,19 @@ contract GlyphGraph is ERC721URIStorage {
         Password password;
         string[] websites;
         string note;
+        bool created;
     }
-    mapping(string => Login) Logins;
+    mapping(string => Login) private Logins;
     event LoginCreated(Login login);
+
+    error GlyphGraph__UserAlreadyExists();
+    error GlyphGraph__UserDoesNotFound();
+    error GlyphGraph__VaultNotFound();
+    error GlyphGraph__VaultAlreadyExists();
+    error GlyphGraph__PasswordNotFound();
+    error GlyphGraph__PasswordAlreadyExists();
+    error GlyphGraph__LoginAlreadyExists();
+    error GlyphGraph__LoginNotFound();
 
     function __generateRandomString(
         uint256 length
@@ -90,7 +103,10 @@ contract GlyphGraph is ERC721URIStorage {
         string memory _name,
         string memory _email,
         string memory _password
-    ) external {
+    ) publi {
+        if (Users[msg.sender].registered == true) {
+            revert GlyphGraph__UserAlreadyExists(); 
+        }
         string memory _randomId = __generateRandomString(32);
         Users[msg.sender]._id = _randomId;
         Users[msg.sender]._address = msg.sender;
@@ -115,7 +131,8 @@ contract GlyphGraph is ERC721URIStorage {
             user: _user,
             name: _name,
             protected: false,
-            password: ""
+            password: "",
+            created: true
         });
         Vaults[_randomId] = _vault;
         emit VaultCreated(_randomId, msg.sender, _name, false, "");
@@ -130,7 +147,8 @@ contract GlyphGraph is ERC721URIStorage {
             user: _user,
             name: _name,
             protected: true,
-            password: _password
+            password: _password,
+            created: true
         });
         Vaults[_randomId] = _vault;
         emit VaultCreated(_randomId, msg.sender, _name, true, _password);
