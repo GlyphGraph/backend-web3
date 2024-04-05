@@ -10,14 +10,14 @@ const config: HardhatUserConfig = {
       optimizer: {
         enabled: true
       }
-    }
+    },
   },
   networks: {
     xdc: {
       url: "https://erpc.apothem.network/",
       accounts: [PRIVATE_KEY]
     }
-  }
+  },
 };
 
 export default config;
