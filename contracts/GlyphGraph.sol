@@ -72,7 +72,7 @@ interface IGlyphGraph is IERC721 {
         string memory _password
     ) external;
 
-    function getAllVaults() external view returns (Vault[] memory);
+    function getUserVaults() external view returns (Vault[] memory);
 
     function updateVaultPassword(
         string memory _vaultId,
@@ -209,7 +209,7 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
         UserVaults[msg.sender].push(_randomId);
     }
 
-    function getAllVaults() public view returns (Vault[] memory) {
+    function getUserVaults() public view returns (Vault[] memory) {
         User memory __user = Users[msg.sender];
         if (bytes(__user._id).length == 0) {
             revert GlyphGraph__UserNotFound();
