@@ -64,22 +64,15 @@ interface IGlyphGraph is IERC721 {
         string memory _password
     ) external;
 
-    function updateUserPassword(string memory _password) external;
-
     // vault
-    function createVault(string memory _name) external;
 
     function createVaultWithPassword(
         string memory _name,
+        bool _protected,
         string memory _password
     ) external;
 
     function getAllVaults() external view returns (Vault[] memory);
-
-    function updateVaultName(
-        string memory _vaultId,
-        string memory _newName
-    ) external;
 
     function updateVaultPassword(
         string memory _vaultId,
@@ -91,15 +84,9 @@ interface IGlyphGraph is IERC721 {
         string memory _newPassword
     ) external;
 
-    function removeProtection(string memory _vaultId) external;
+    // function removeProtection(string memory _vaultId) external;
 
     // password
-    function createPassword(
-        string memory _image,
-        uint32 _rows,
-        uint32 _cols,
-        PasswordType _passwordType
-    ) external;
 
     function createPasswordWithSettings(
         string memory _image,
@@ -128,7 +115,6 @@ interface IGlyphGraph is IERC721 {
     ) external;
 
     function getLogin(string memory _id) external view returns (Login memory);
-    function getUserLogins() external view returns (Login[] memory);
     function getVaultLogins(string memory _vaultId) external view returns (Login[] memory);
 }
 
@@ -168,7 +154,7 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
         return string(randomString);
     }
 
-    constructor() ERC721("GlyphGraphVaults", "GLG") {}
+    constructor() ERC721("GlyphGraph", "GLG") {}
 
     function addUser(
         string memory _name,
@@ -201,34 +187,9 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
         return __user;
     }
 
-    function updateUserPassword(string memory _password) public {
-        User memory __user = Users[msg.sender];
-        if (bytes(__user._id).length == 0) {
-            revert GlyphGraph__UserNotFound();
-        }
-        Users[msg.sender].password = _password;
-    }
-
-    function createVault(string memory _name) public {
-        User memory __user = Users[msg.sender];
-        if (bytes(__user._id).length == 0) {
-            revert GlyphGraph__UserNotFound();
-        }
-        string memory _randomId = __generateRandomString(32);
-        Vault memory _vault = Vault(
-            _randomId,
-            msg.sender,
-            _name,
-            false,
-            "",
-            true
-        );
-        Vaults[_randomId] = _vault;
-        UserVaults[msg.sender].push(_randomId);
-    }
-
     function createVaultWithPassword(
         string memory _name,
+        bool _protected,
         string memory _password
     ) public {
         User memory __user = Users[msg.sender];
@@ -240,7 +201,7 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
             _randomId,
             msg.sender,
             _name,
-            true,
+            _protected,
             _password,
             true
         );
@@ -259,20 +220,6 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
             _vaults[i] = Vaults[vaultId];
         }
         return _vaults;
-    }
-
-    function updateVaultName(
-        string memory _vaultId,
-        string memory _newName
-    ) public {
-        User memory __user = Users[msg.sender];
-        if (bytes(__user._id).length == 0) {
-            revert GlyphGraph__UserNotFound();
-        }
-        if (bytes(Vaults[_vaultId]._id).length == 0) {
-            revert GlyphGraph__VaultNotFound();
-        }
-        Vaults[_vaultId].name = _newName;
     }
 
     function updateVaultPassword(
@@ -304,43 +251,17 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
         Vaults[_vaultId].password = _newPassword;
     }
 
-    function removeProtection(string memory _vaultId) public {
-        User memory __user = Users[msg.sender];
-        if (bytes(__user._id).length == 0) {
-            revert GlyphGraph__UserNotFound();
-        }
-        if (bytes(Vaults[_vaultId]._id).length == 0) {
-            revert GlyphGraph__VaultNotFound();
-        }
-        Vaults[_vaultId].protected = false;
-        Vaults[_vaultId].password = "";
-    }
-
-    function createPassword(
-        string memory _image,
-        uint32 _rows,
-        uint32 _cols,
-        PasswordType _passwordType
-    ) external {
-        User memory __user = Users[msg.sender];
-        if (bytes(__user._id).length == 0) {
-            revert GlyphGraph__UserNotFound();
-        }
-        string memory _randomId = __generateRandomString(32);
-        Password memory _password = Password(
-            msg.sender,
-            _image,
-            _rows,
-            _cols,
-            true,
-            true,
-            true,
-            _passwordType,
-            true
-        );
-        Passwords[_randomId] = _password;
-        UserPasswords[msg.sender].push(_randomId);
-    }
+    // function removeProtection(string memory _vaultId) public {
+    //     User memory __user = Users[msg.sender];
+    //     if (bytes(__user._id).length == 0) {
+    //         revert GlyphGraph__UserNotFound();
+    //     }
+    //     if (bytes(Vaults[_vaultId]._id).length == 0) {
+    //         revert GlyphGraph__VaultNotFound();
+    //     }
+    //     Vaults[_vaultId].protected = false;
+    //     Vaults[_vaultId].password = "";
+    // }
 
     function createPasswordWithSettings(
         string memory _image,
@@ -390,7 +311,7 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
             revert GlyphGraph__UserNotFound();
         }
 
-        Password[] memory userPasswords = new Password[](UserPasswords[msg.sender].length);
+        Password[] memory userPasswords = new Password[](0);
         for (uint256 i = 0; i < UserPasswords[msg.sender].length; i++) {
             string memory passwordId = UserPasswords[msg.sender][i];
             userPasswords[i] = Passwords[passwordId];
@@ -441,20 +362,6 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
         return Logins[_id];
     }
 
-    function getUserLogins() external view returns (Login[] memory) {
-        User memory __user = Users[msg.sender];
-        if (bytes(__user._id).length == 0) {
-            revert GlyphGraph__UserNotFound();
-        }
-
-        Login[] memory userLogins = new Login[](UserLogins[msg.sender].length);
-        for (uint256 i = 0; i < UserLogins[msg.sender].length; i++) {
-            string memory loginId = UserLogins[msg.sender][i];
-            userLogins[i] = Logins[loginId];
-        }
-        return userLogins;
-    }
-
     function getVaultLogins(string memory _vaultId) external view returns (Login[] memory) {
         User memory __user = Users[msg.sender];
         if (bytes(__user._id).length == 0) {
@@ -465,7 +372,7 @@ contract GlyphGraph is ERC721URIStorage, IGlyphGraph {
             revert GlyphGraph__VaultNotFound();
         }
 
-        Login[] memory vaultLogins = new Login[](UserLogins[msg.sender].length);
+        Login[] memory vaultLogins = new Login[](0);
         uint256 counter = 0;
         for (uint256 i = 0; i < UserLogins[msg.sender].length; i++) {
             string memory loginId = UserLogins[msg.sender][i];
